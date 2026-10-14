@@ -23,8 +23,8 @@ if (H5WASM_WASM64)
   endif()
   set (LIBHDF5_URL ${LIBHDF5_WASM64_URL})
   set (LIBHDF5_SHA256 ${LIBHDF5_WASM64_SHA256})
-  # no MAIN_MODULE: h5wasm-plugins are wasm32 side modules and can't load here
-  set (VARIANT_FLAGS "-s MEMORY64=1 -s MAXIMUM_MEMORY=16GB")
+  # MAIN_MODULE so wasm64 (MEMORY64) h5wasm-plugins side modules can be loaded
+  set (VARIANT_FLAGS "-s MAIN_MODULE=2 -s MEMORY64=1 -s MAXIMUM_MEMORY=16GB")
   set (DIST_DIR ${DIST_DIR}/wasm64)
   add_compile_options(-sMEMORY64=1)
 endif()

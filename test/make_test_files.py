@@ -113,3 +113,14 @@ with h5py.File("unavailable_filter.h5", "w") as f:
     data = np.repeat(np.arange(1, 17, dtype="<f4"), 16).reshape(16, 16)
     f.create_dataset("lzf", data=data, compression="lzf")
     f.create_dataset("lzf_vlen_str", data=["abc"] * 256, dtype=h5py.string_dtype(), compression="lzf")
+
+with h5py.File("compound.h5", "w") as f:
+    # packed, so the f8 "temperature" sits unaligned at offset 4
+    position = np.dtype([("x", "<f4"), ("y", "<f4"), ("z", "<f4")])
+    data = np.array(
+        [(i * 10, i + 0.5, i % 3, str(i), (i, -i), (i, 2 * i, 3 * i)) for i in range(4)],
+        dtype=[("id", "<i4"), ("temperature", "<f8"), ("color", h5py.enum_dtype({"R": 0, "G": 1, "B": 2}, basetype="u1")),
+               ("name", h5py.string_dtype()), ("pair", "<i2", (2,)), ("position", position)])
+    f.create_dataset("mixed", data=data)
+    f.create_dataset("scalar", data=data[1])
+    f["mixed"].attrs["position_attr"] = data["position"][:2]

@@ -30,6 +30,7 @@ import complex_test from './complex_test.mjs';
 import read_write_errors from './read_write_errors.mjs';
 import electron_preload_test from './electron_preload_test.mjs';
 import file_handlers_test from './file_handlers_test.mjs';
+import compound_as_map_test from './compound_as_map_test.mjs';
 
 let tests = [];
 const add_tests = (tests_in) => { /*global*/ tests = tests.concat(tests_in)}
@@ -63,6 +64,7 @@ add_tests(complex_test);
 add_tests(read_write_errors);
 add_tests(electron_preload_test);
 add_tests(file_handlers_test);
+add_tests(compound_as_map_test);
 
 let passed = true;
 async function run_test(test) {

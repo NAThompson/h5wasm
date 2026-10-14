@@ -31,11 +31,19 @@
     "./wasm64/node": {
       "types": "./src/hdf5_hl.d.ts",
       "import": "./dist/wasm64/node/hdf5_hl.js"
+    },
+    "./wasm64/file_handlers": {
+      "types": "./src/file_handlers.d.ts",
+      "import": "./dist/wasm64/esm/file_handlers.js"
+    },
+    "./wasm64/lazy_file": {
+      "types": "./src/lazy_file.d.ts",
+      "import": "./dist/wasm64/esm/lazy_file.js"
     }
   },
   "scripts": {
     "build": "npm run build_esm && npm run build_node && npm run build_wasm64 && npm run build_types && npm run build_iife",
-    "build_wasm64": "node -e \"for (const d of ['esm', 'node']) if (fs.existsSync('dist/wasm64/' + d + '/hdf5_util.js')) fs.copyFileSync('dist/' + d + '/hdf5_hl.js', 'dist/wasm64/' + d + '/hdf5_hl.js')\"",
+    "build_wasm64": "node -e \"for (const [d, files] of [['esm', ['hdf5_hl.js', 'file_handlers.js', 'lazy_file.js']], ['node', ['hdf5_hl.js']]]) if (fs.existsSync('dist/wasm64/' + d + '/hdf5_util.js')) for (const f of files) fs.copyFileSync('dist/' + d + '/' + f, 'dist/wasm64/' + d + '/' + f)\"",
     "build_esm": "tsc src/hdf5_hl.ts src/file_handlers.ts src/lazy_file.ts --strict --outDir dist/esm --target es2020",
     "build_node": "tsc src/hdf5_hl.ts --outDir dist/node --target es2020 --allowJs --esModuleInterop",
     "build_iife": "esbuild --bundle dist/esm/hdf5_hl.js --outfile=dist/iife/h5wasm.js --format=iife --global-name=h5wasm",

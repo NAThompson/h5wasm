@@ -108,6 +108,7 @@ set_target_properties(hdf5_util PROPERTIES
     -s EXPORT_ES6=1 \
     -s FORCE_FILESYSTEM=1 \
     -s EXPORTED_RUNTIME_METHODS=\"['ccall', 'cwrap', 'FS', 'AsciiToString', 'UTF8ToString', 'HEAPU8']\" \
+    --js-library ${CMAKE_CURRENT_SOURCE_DIR}/src/resize_heap_guard.js \
     -s EXPORTED_FUNCTIONS=\"${EXPORTED_FUNCTIONS_STRING}\""
     RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR}/esm
     RUNTIME_OUTPUT_NAME hdf5_util
@@ -134,8 +135,13 @@ set_target_properties(hdf5_util_node PROPERTIES
     -s SINGLE_FILE \
     -s EXPORT_ES6=1 \
     -s EXPORTED_RUNTIME_METHODS=\"['ccall', 'cwrap', 'FS', 'AsciiToString', 'UTF8ToString', 'HEAPU8']\" \
+    --js-library ${CMAKE_CURRENT_SOURCE_DIR}/src/resize_heap_guard.js \
     -s EXPORTED_FUNCTIONS=\"${EXPORTED_FUNCTIONS_STRING}\""
     RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR}/node
     RUNTIME_OUTPUT_NAME hdf5_util
     POSITION_INDEPENDENT_CODE ON
 )
+
+# relink when the JS library changes
+set_property(TARGET hdf5_util hdf5_util_node APPEND PROPERTY
+    LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/resize_heap_guard.js)

@@ -600,29 +600,25 @@ FS.syncfs(false, (e) => {console.log(e)})
 ```
 
 ## Using in Electron app
-If using the nodejs build in an Electron app (for direct filesystem access through`NODERAWFS`),
-you will run into an issue where the `emscripten` environment-checking code fails, because the 
-`navigator` object is defined in the runtime environment even though it's not a web environment. 
+`h5wasm/node` works in the Electron main process and in an ESM preload script (`preload.mjs`,
+Electron 28+, `contextIsolation: true`, `sandbox: false`):
 
-To work around this, you have to undefine `navigator` before initializing the library, then you can
-redefine it after initialization, as seen below:
+```javascript
+const h5wasm = await import('h5wasm/node');
+await h5wasm.ready;
+```
+
+Older versions throw `This page was compiled without support for Chrome browser` in a preload; to work
+around it, hide `navigator` while loading:
 
 ```javascript
 let h5wasm;
-const navigator_object = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
-if (navigator_object?.configurable) {
-  Object.defineProperty(globalThis, 'navigator', {
-    value: undefined,
-    configurable: true,
-  });
-}
+const nav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+Object.defineProperty(globalThis, 'navigator', { value: undefined, configurable: true });
 try {
   h5wasm = await import('h5wasm/node');
   await h5wasm.ready;
-}
-finally {
-  if (navigator_object?.configurable) {
-    Object.defineProperty(globalThis, 'navigator', navigator_object);
-  }
+} finally {
+  Object.defineProperty(globalThis, 'navigator', nav);
 }
 ```

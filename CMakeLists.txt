@@ -70,6 +70,22 @@ list (APPEND EXPORTED_FUNCTIONS
     # used by h5wasm-plugins (blosc/blosc2 zlib codec, zfp doubles, zstd, ...)
     ldexp compress2 uncompress memcmp qsort strtol strerror __errno_location
     puts fputc fwrite fflush fiprintf clock
+    # Also imported by h5wasm-plugins, resolved lazily so only missed when called
+    # (e.g. on error paths); identical for wasm32 and wasm64. Check for gaps by
+    # diffing each plugin's `env` imports against the main module's exports.
+    # - HDF5 (bitgroom, bitround, blosc, blosc2, zfp)
+    H5Premove_filter H5Pget_fill_value H5Tget_super H5Tclose H5Tconvert
+    H5Pget H5Pset H5Pinsert2 H5Pisa_class H5Pget_nfilters H5Pget_filter2 H5Pset_filter
+    # - setjmp/longjmp (jpeg)
+    emscripten_longjmp setTempRet0 __wasm_setjmp_test
+    # - stdio, file system and dynamic loading (blosc2 plugins and tuning, bz2, lz4, ...)
+    __small_fprintf fopen fdopen fclose fread fgets fgetc ungetc ferror fseek ftell fileno
+    ftruncate stat mkdir mmap munmap msync popen pclose strstr
+    dlopen dlsym dlclose dlerror
+    # - threads (blosc, blosc2; never started, as single-threaded)
+    pthread_join pthread_attr_destroy pthread_mutex_destroy
+    pthread_cond_wait pthread_cond_broadcast pthread_cond_destroy
+    pthread_barrier_wait pthread_barrier_destroy
 )
 list (TRANSFORM EXPORTED_FUNCTIONS PREPEND "'_")
 list (TRANSFORM EXPORTED_FUNCTIONS APPEND "'")

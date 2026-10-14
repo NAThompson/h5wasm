@@ -67,6 +67,9 @@ list (APPEND EXPORTED_FUNCTIONS
     H5T_NATIVE_UINT_g H5T_STD_U32BE_g H5T_STD_U32LE_g H5T_NATIVE_UINT32_g
     H5T_STD_U64BE_g H5T_NATIVE_UINT64_g H5T_STD_U64LE_g H5P_CLS_DATASET_CREATE_ID_g
     frexp frexpf log10 ldexpf __THREW__ __threwValue
+    # used by h5wasm-plugins (blosc/blosc2 zlib codec, zfp doubles, zstd, ...)
+    ldexp compress2 uncompress memcmp qsort strtol strerror __errno_location
+    puts fputc fwrite fflush fiprintf clock
 )
 list (TRANSFORM EXPORTED_FUNCTIONS PREPEND "'_")
 list (TRANSFORM EXPORTED_FUNCTIONS APPEND "'")

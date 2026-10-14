@@ -277,6 +277,8 @@ new_file.get("entry").create_dataset({name: "compressed", data: long_data, shape
 // new_file.get("entry").create_dataset({name: "compressed", data: long_data, shape: [1000, 1000], dtype: '<f', chunks=[100,100], compression='gzip', compression_opts=[9]});
 new_file.get("entry/compressed").filters
 // [{id: 1, name: 'deflate'}]);
+new_file.get("entry/compressed").storage
+// {layout: 'chunked', nfilters: 1, storage_size: ..., offset: null, chunks: {shape: [100, 100], offsets: Float64Array, addrs: Float64Array, sizes: Float64Array, filter_masks: Uint32Array}}
 new_file.get("entry/compressed").slice([[2,3]]);
 // Float32Array(1000) [ 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, … ]
 

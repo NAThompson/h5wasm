@@ -1,4 +1,4 @@
-import type {Status, Metadata, WriteMetadata, H5Module, CompoundMember, CompoundTypeMetadata, EnumTypeMetadata, Filter} from "./hdf5_util_helpers.js";
+import type {Status, Metadata, WriteMetadata, H5Module, CompoundMember, CompoundTypeMetadata, EnumTypeMetadata, Filter, DatasetStorage} from "./hdf5_util_helpers.js";
 
 import ModuleFactory from './hdf5_util.js';
 
@@ -214,7 +214,7 @@ export type CompoundMemberDtype = [string, Dtype] | [string, Dtype, number[]];
 export type CompoundDtype = CompoundMemberDtype[];
 export type ArrayDtype = [string, number[]];
 export type Dtype = string | {compound_type: CompoundTypeMetadata} | {array_type: Metadata} | CompoundDtype | ArrayDtype;
-export type { Metadata, Filter, CompoundMember, CompoundTypeMetadata, EnumTypeMetadata };
+export type { Metadata, Filter, CompoundMember, CompoundTypeMetadata, EnumTypeMetadata, DatasetStorage };
 
 function process_data(data: Uint8Array, metadata: Metadata, json_compatible: true): JSONCompatibleOutputData;
 function process_data(data: Uint8Array, metadata: Metadata, json_compatible: false): OutputData;
@@ -1379,6 +1379,11 @@ export class Dataset extends HasAttrs {
 
   get filters(): Filter[] {
     return Module.get_dataset_filters(this.file_id, this.path);
+  }
+
+  /* Location of the raw data in the file, e.g. to read unfiltered data directly */
+  get storage(): DatasetStorage {
+    return Module.get_dataset_storage(this.file_id, this.path);
   }
 
   get value(): OutputData | null {

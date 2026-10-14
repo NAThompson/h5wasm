@@ -617,6 +617,95 @@ val get_dataset_metadata(hid_t loc_id, const std::string& dataset_name_string)
     return metadata;
 }
 
+struct ChunkIterData
+{
+    int rank;
+    std::vector<double> offsets;
+    std::vector<double> addrs;
+    std::vector<double> sizes;
+    std::vector<uint32_t> filter_masks;
+};
+
+static int chunk_iter_cb(const hsize_t *offset, unsigned filter_mask, haddr_t addr, hsize_t size, void *op_data)
+{
+    ChunkIterData *data = (ChunkIterData *)op_data;
+    for (int d = 0; d < data->rank; d++) {
+        data->offsets.push_back((double)offset[d]);
+    }
+    data->addrs.push_back((double)addr);
+    data->sizes.push_back((double)size);
+    data->filter_masks.push_back((uint32_t)filter_mask);
+    return H5_ITER_CONT;
+}
+
+// Where a dataset's raw data lives in the file, so that callers can read it directly
+// (e.g. with parallel range requests) when it is stored unfiltered.
+// Chunk offsets are in dataset elements (logical coordinates of each chunk's first element),
+// addresses and sizes in bytes; unallocated chunks are not listed.
+val get_dataset_storage(hid_t loc_id, const std::string& dataset_name_string)
+{
+    hid_t ds_id = H5Dopen2(loc_id, dataset_name_string.c_str(), H5P_DEFAULT);
+    if (ds_id < 0)
+    {
+        throw_error("error - name not defined!");
+        return val::null();
+    }
+
+    hid_t dcpl = H5Dget_create_plist(ds_id);
+    hid_t dspace = H5Dget_space(ds_id);
+    int rank = H5Sget_simple_extent_ndims(dspace);
+    H5D_layout_t layout = H5Pget_layout(dcpl);
+
+    val storage = val::object();
+    storage.set("nfilters", H5Pget_nfilters(dcpl));
+    storage.set("storage_size", (double)H5Dget_storage_size(ds_id));
+    storage.set("offset", val::null());
+    storage.set("chunks", val::null());
+
+    if (layout == H5D_CONTIGUOUS)
+    {
+        storage.set("layout", std::string("contiguous"));
+        haddr_t offset = H5Dget_offset(ds_id); // HADDR_UNDEF if not allocated (or external storage)
+        if (offset != HADDR_UNDEF && H5Pget_external_count(dcpl) == 0)
+        {
+            storage.set("offset", (double)offset);
+        }
+    }
+    else if (layout == H5D_CHUNKED && rank > 0)
+    {
+        storage.set("layout", std::string("chunked"));
+        ChunkIterData data;
+        data.rank = rank;
+        herr_t status = H5Dchunk_iter(ds_id, H5P_DEFAULT, chunk_iter_cb, &data);
+        if (status >= 0)
+        {
+            std::vector<hsize_t> chunk_dims(rank);
+            H5Pget_chunk(dcpl, rank, chunk_dims.data());
+            val shape = val::array();
+            for (int d = 0; d < rank; d++) {
+                shape.set(d, (double)chunk_dims.at(d));
+            }
+
+            val chunks = val::object();
+            chunks.set("shape", shape);
+            chunks.set("offsets", val::global("Float64Array").new_(typed_memory_view(data.offsets.size(), data.offsets.data())));
+            chunks.set("addrs", val::global("Float64Array").new_(typed_memory_view(data.addrs.size(), data.addrs.data())));
+            chunks.set("sizes", val::global("Float64Array").new_(typed_memory_view(data.sizes.size(), data.sizes.data())));
+            chunks.set("filter_masks", val::global("Uint32Array").new_(typed_memory_view(data.filter_masks.size(), data.filter_masks.data())));
+            storage.set("chunks", chunks);
+        }
+    }
+    else
+    {
+        storage.set("layout", std::string(layout == H5D_COMPACT ? "compact" : layout == H5D_VIRTUAL ? "virtual" : "other"));
+    }
+
+    H5Sclose(dspace);
+    H5Pclose(dcpl);
+    H5Dclose(ds_id);
+    return storage;
+}
+
 val get_dataset_filters(hid_t loc_id, const std::string& dataset_name_string)
 {
     hid_t ds_id;
@@ -1520,6 +1609,7 @@ EMSCRIPTEN_BINDINGS(hdf5)
     function("get_dataset_metadata", &get_dataset_metadata);
     function("get_datatype_metadata", &get_datatype_metadata);
     function("get_dataset_filters", &get_dataset_filters);
+    function("get_dataset_storage", &get_dataset_storage);
     function("refresh_dataset", &refresh_dataset);
     function("get_dataset_data", &get_dataset_data);
     function("set_dataset_data", &set_dataset_data);

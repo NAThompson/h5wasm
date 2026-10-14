@@ -1,6 +1,7 @@
 # Changelog
 ## Unreleased
 ### Added
+* `Dataset.storage`: where a dataset's raw data lives in the file (layout, number of filters, address of contiguous data, and address, size and filter mask of each allocated chunk), e.g. to read unfiltered data directly with parallel range requests.
 * Support for the native HDF5 complex datatype (`H5T_COMPLEX`, new in HDF5 2.0). Complex datasets and attributes read as a typed array of interleaved components (`Float64Array` for complex128, `Float32Array` for complex64, `Float16Array` for complex32), with `to_array()` pairing `[real, imag]` as the innermost axis. Writes take the same flat form under the `<c4`, `<c8` and `<c16` dtypes.
 ## v0.8.11 2026-01-08
 ## Fixed

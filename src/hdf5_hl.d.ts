@@ -1,4 +1,4 @@
-import type { Status, Metadata, H5Module, CompoundMember, CompoundTypeMetadata, EnumTypeMetadata, Filter } from "./hdf5_util_helpers.js";
+import type { Status, Metadata, H5Module, CompoundMember, CompoundTypeMetadata, EnumTypeMetadata, Filter, DatasetStorage } from "./hdf5_util_helpers.js";
 export declare var Module: H5Module;
 export declare var FS: (FS.FileSystemType | null);
 declare const ready: Promise<H5Module>;
@@ -37,7 +37,7 @@ export type Dtype = string | {
 } | {
     array_type: Metadata;
 } | CompoundDtype | ArrayDtype;
-export type { Metadata, Filter, CompoundMember, CompoundTypeMetadata, EnumTypeMetadata };
+export type { Metadata, Filter, CompoundMember, CompoundTypeMetadata, EnumTypeMetadata, DatasetStorage };
 export declare function dtype_to_metadata(dtype: Dtype): Metadata;
 type MaybeFloat16Array = InstanceType<typeof globalThis extends {
     Float16Array: infer C;
@@ -169,6 +169,7 @@ export declare class Dataset extends HasAttrs {
     get dtype(): Dtype;
     get shape(): number[] | null;
     get filters(): Filter[];
+    get storage(): DatasetStorage;
     get value(): OutputData | null;
     get json_value(): JSONCompatibleOutputData | null;
     /** Like value, but COMPOUND data is a CompoundMap of columns */

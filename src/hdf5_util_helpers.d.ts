@@ -119,6 +119,7 @@ export interface H5Module extends EmscriptenModule {
     get_dataset_metadata(file_id: bigint, path: string): Metadata;
     get_datatype_metadata(file_id: bigint, path: string): Metadata;
     get_dataset_filters(file_id: bigint, path: string): Filter[];
+    get_dataset_storage(file_id: bigint, path: string): DatasetStorage;
     flush(file_id: bigint): number;
     H5Fstart_swmr_write(file_id: bigint): number;
     ccall: typeof ccall;
@@ -160,4 +161,21 @@ export declare type Filter = {
     id: number;
     name: string;
     cd_values: number[];
+}
+
+/* Where a dataset's raw data lives in the file (see `Dataset.storage`) */
+export declare type DatasetStorage = {
+    layout: 'contiguous' | 'chunked' | 'compact' | 'virtual' | 'other';
+    nfilters: number;
+    storage_size: number;
+    /* Address of contiguous data in bytes, or `null` if not allocated or stored externally */
+    offset: number | null;
+    /* Allocated chunks of chunked datasets (`null` otherwise) */
+    chunks: {
+        shape: number[];
+        offsets: Float64Array; // logical coordinates of each chunk's first element, `rank` per chunk
+        addrs: Float64Array; // in bytes
+        sizes: Float64Array; // in bytes, as stored (i.e. after filters)
+        filter_masks: Uint32Array; // bit `i` set if filter `i` was skipped for this chunk
+    } | null;
 }

@@ -127,8 +127,9 @@ const f = new h5wasm.File(lazy.filename, "r"); // using the default "h5wasm" bui
 
 ## wasm64 (reading more than 2 GB at once)
 The default (wasm32) build is limited to 2 GB of memory. `h5wasm/wasm64` and `h5wasm/wasm64/node` have the same API
-with a 16 GB limit, but need Memory64 support (Node 24+, Chrome 133+, Firefox 134+; not yet Safari)
-and cannot load h5wasm-plugins. Use `h5wasm/wasm64/lazy_file` and `h5wasm/wasm64/file_handlers` with it.
+with a 16 GB limit, but need Memory64 support (Node 24+, Chrome 133+, Firefox 134+; not yet Safari).
+Use `h5wasm/wasm64/lazy_file` and `h5wasm/wasm64/file_handlers` with it, and the wasm64 build of the
+compression plugins from `h5wasm-plugins/wasm64` (wasm32 plugins cannot be loaded).
 
 # User Guide
 _(all examples are written in ESM - for Typescript some type casting is probably required, as `get` returns either Group or Dataset)_

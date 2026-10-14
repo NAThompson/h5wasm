@@ -55,7 +55,14 @@ async function dataset_storage() {
   assert.equal(compressed.chunks.addrs.length, 2);
   assert.ok(compressed.chunks.sizes[0] < 3 * 4 * 4);
 
+  // Errors are thrown (and don't leak handles: the file can still be closed and reopened)
+  assert.throws(() => h5wasm.Module.get_dataset_storage(f.file_id, "missing"));
+  assert.throws(() => h5wasm.Module.get_dataset_storage(f.file_id, "group"));
+
   f.close();
+  const reopened = new h5wasm.File(FILEPATH, "r");
+  assert.equal(reopened.get("chunked").storage.layout, "chunked");
+  reopened.close();
   unlinkSync(FILEPATH);
 }
 

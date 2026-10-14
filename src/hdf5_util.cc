@@ -651,36 +651,65 @@ val get_dataset_storage(hid_t loc_id, const std::string& dataset_name_string)
         return val::null();
     }
 
+    // Gather everything with HDF5 first, and close all handles before creating JS values
+    // (JS exceptions would skip the cleanup)
     hid_t dcpl = H5Dget_create_plist(ds_id);
     hid_t dspace = H5Dget_space(ds_id);
-    int rank = H5Sget_simple_extent_ndims(dspace);
-    H5D_layout_t layout = H5Pget_layout(dcpl);
+    bool ok = dcpl >= 0 && dspace >= 0;
+
+    int rank = ok ? H5Sget_simple_extent_ndims(dspace) : -1;
+    H5D_layout_t layout = ok ? H5Pget_layout(dcpl) : H5D_LAYOUT_ERROR;
+    int nfilters = ok ? H5Pget_nfilters(dcpl) : -1;
+    hsize_t storage_size = ok ? H5Dget_storage_size(ds_id) : 0;
+    ok = ok && rank >= 0 && layout != H5D_LAYOUT_ERROR && nfilters >= 0;
+
+    haddr_t offset = HADDR_UNDEF;
+    int external_count = 0;
+    ChunkIterData data;
+    data.rank = rank;
+    std::vector<hsize_t> chunk_dims(rank > 0 ? rank : 0);
+
+    if (ok && layout == H5D_CONTIGUOUS)
+    {
+        offset = H5Dget_offset(ds_id); // HADDR_UNDEF if not allocated (or external storage)
+        external_count = H5Pget_external_count(dcpl);
+        ok = external_count >= 0;
+    }
+    else if (ok && layout == H5D_CHUNKED && rank > 0)
+    {
+        ok = H5Pget_chunk(dcpl, rank, chunk_dims.data()) == rank &&
+             H5Dchunk_iter(ds_id, H5P_DEFAULT, chunk_iter_cb, &data) >= 0;
+    }
+
+    if (dspace >= 0) H5Sclose(dspace);
+    if (dcpl >= 0) H5Pclose(dcpl);
+    H5Dclose(ds_id);
+
+    if (!ok)
+    {
+        throw_error("error - could not get dataset storage!");
+        return val::null();
+    }
 
     val storage = val::object();
-    storage.set("nfilters", H5Pget_nfilters(dcpl));
-    storage.set("storage_size", (double)H5Dget_storage_size(ds_id));
+    storage.set("nfilters", nfilters);
+    storage.set("storage_size", (double)storage_size);
     storage.set("offset", val::null());
     storage.set("chunks", val::null());
 
     if (layout == H5D_CONTIGUOUS)
     {
         storage.set("layout", std::string("contiguous"));
-        haddr_t offset = H5Dget_offset(ds_id); // HADDR_UNDEF if not allocated (or external storage)
-        if (offset != HADDR_UNDEF && H5Pget_external_count(dcpl) == 0)
+        if (offset != HADDR_UNDEF && external_count == 0)
         {
             storage.set("offset", (double)offset);
         }
     }
-    else if (layout == H5D_CHUNKED && rank > 0)
+    else if (layout == H5D_CHUNKED)
     {
         storage.set("layout", std::string("chunked"));
-        ChunkIterData data;
-        data.rank = rank;
-        herr_t status = H5Dchunk_iter(ds_id, H5P_DEFAULT, chunk_iter_cb, &data);
-        if (status >= 0)
+        if (rank > 0)
         {
-            std::vector<hsize_t> chunk_dims(rank);
-            H5Pget_chunk(dcpl, rank, chunk_dims.data());
             val shape = val::array();
             for (int d = 0; d < rank; d++) {
                 shape.set(d, (double)chunk_dims.at(d));
@@ -700,9 +729,6 @@ val get_dataset_storage(hid_t loc_id, const std::string& dataset_name_string)
         storage.set("layout", std::string(layout == H5D_COMPACT ? "compact" : layout == H5D_VIRTUAL ? "virtual" : "other"));
     }
 
-    H5Sclose(dspace);
-    H5Pclose(dcpl);
-    H5Dclose(ds_id);
     return storage;
 }
 

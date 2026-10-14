@@ -125,6 +125,11 @@ const lazy = await create_lazy_url_file("https://example.com/big.h5", "big.h5");
 const f = new h5wasm.File(lazy.filename, "r"); // using the default "h5wasm" build
 ```
 
+## wasm64 (reading more than 2 GB at once)
+The default (wasm32) build is limited to 2 GB of memory. `h5wasm/wasm64` and `h5wasm/wasm64/node` have the same API
+with a 16 GB limit, but need Memory64 support (Node 24+, Chrome 133+, Firefox 134+; not yet Safari)
+and cannot load h5wasm-plugins.
+
 # User Guide
 _(all examples are written in ESM - for Typescript some type casting is probably required, as `get` returns either Group or Dataset)_
 
